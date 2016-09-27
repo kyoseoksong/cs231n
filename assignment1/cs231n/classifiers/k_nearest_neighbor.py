@@ -1,3 +1,4 @@
+# -*- coding: utf8 -*-
 import numpy as np
 from collections import Counter
 
@@ -9,7 +10,7 @@ class KNearestNeighbor(object):
 
   def train(self, X, y):
     """
-    Train the classifier. For k-nearest neighbors this is just 
+    Train the classifier. For k-nearest neighbors this is just
     memorizing the training data.
 
     Inputs:
@@ -20,7 +21,7 @@ class KNearestNeighbor(object):
     """
     self.X_train = X
     self.y_train = y
-    
+
   def predict(self, X, k=1, num_loops=0):
     """
     Predict labels for test data using this classifier.
@@ -34,7 +35,7 @@ class KNearestNeighbor(object):
 
     Returns:
     - y: A numpy array of shape (num_test,) containing predicted labels for the
-      test data, where y[i] is the predicted label for the test point X[i].  
+      test data, where y[i] is the predicted label for the test point X[i].
     """
     if num_loops == 0:
       dists = self.compute_distances_no_loops(X)
@@ -50,7 +51,7 @@ class KNearestNeighbor(object):
   def compute_distances_two_loops(self, X):
     """
     Compute the distance between each test point in X and each training point
-    in self.X_train using a nested loop over both the training data and the 
+    in self.X_train using a nested loop over both the training data and the
     test data.
 
     Inputs:
@@ -61,18 +62,19 @@ class KNearestNeighbor(object):
       is the Euclidean distance between the ith test point and the jth training
       point.
     """
-    num_test = X.shape[0]
-    num_train = self.X_train.shape[0]
-    dists = np.zeros((num_test, num_train))
-    for i in xrange(num_test):
-      for j in xrange(num_train):
+    num_test = X.shape[0] # 500
+    num_train = self.X_train.shape[0] # 5,000
+    dists = np.zeros((num_test, num_train)) # (500, 5000)
+    for i in xrange(num_test): # loops 500 times
+      for j in xrange(num_train): # loops 5000 times
         #####################################################################
         # TODO:                                                             #
         # Compute the l2 distance between the ith test point and the jth    #
         # training point, and store the result in dists[i, j]. You should   #
         # not use a loop over dimension.                                    #
         #####################################################################
-	dists[i,j] = np.sqrt(np.sum((X[i] - self.X_train[j])**2))
+	#dists[i,j] = np.sqrt( np.sum((X[i] - self.X_train[j])**2) )
+	dists[i,j] = np.linalg.norm(X[i] - self.X_train[j])
 	# pass
         #####################################################################
         #                       END OF YOUR CODE                            #
@@ -86,16 +88,17 @@ class KNearestNeighbor(object):
 
     Input / Output: Same as compute_distances_two_loops
     """
-    num_test = X.shape[0]
-    num_train = self.X_train.shape[0]
-    dists = np.zeros((num_test, num_train))
-    for i in xrange(num_test):
+    num_test = X.shape[0] # 500
+    num_train = self.X_train.shape[0] # 5,000
+    dists = np.zeros((num_test, num_train)) # (500, 5000)
+    for i in xrange(num_test): # loops 500 times
       #######################################################################
       # TODO:                                                               #
       # Compute the l2 distance between the ith test point and all training #
       # points, and store the result in dists[i, :].                        #
       #######################################################################
       dists[i,:] = np.linalg.norm(self.X_train - X[i,:], axis=1)
+      # Broadcasting 발생하여 (5000,3072) - (1,3072) 를 수행
       #######################################################################
       #                         END OF YOUR CODE                            #
       #######################################################################
@@ -108,9 +111,9 @@ class KNearestNeighbor(object):
 
     Input / Output: Same as compute_distances_two_loops
     """
-    num_test = X.shape[0]
-    num_train = self.X_train.shape[0]
-    dists = np.zeros((num_test, num_train)) 
+    num_test = X.shape[0] # 500
+    num_train = self.X_train.shape[0] # 5,000
+    dists = np.zeros((num_test, num_train)) # (500,5000)
     #########################################################################
     # TODO:                                                                 #
     # Compute the l2 distance between all test points and all training      #
@@ -125,7 +128,9 @@ class KNearestNeighbor(object):
     #########################################################################
     M = np.dot(X, self.X_train.T)
     te = np.square(X).sum(axis = 1)
+    # print te.shape, X.shape # (500,) (500,3072)
     tr = np.square(self.X_train).sum(axis = 1)
+    # print tr.shape, self.X_train.shape # (5000,) (5000,3072)
     dists = np.sqrt(-2*M+tr+np.matrix(te).T)
     #########################################################################
     #                         END OF YOUR CODE                              #
@@ -143,11 +148,11 @@ class KNearestNeighbor(object):
 
     Returns:
     - y: A numpy array of shape (num_test,) containing predicted labels for the
-      test data, where y[i] is the predicted label for the test point X[i].  
+      test data, where y[i] is the predicted label for the test point X[i].
     """
-    num_test = dists.shape[0]
-    y_pred = np.zeros(num_test)
-    for i in xrange(num_test):
+    num_test = dists.shape[0] # 500
+    y_pred = np.zeros(num_test) # (500)
+    for i in xrange(num_test): # iterate 500 times
       # A list of length k storing the labels of the k nearest neighbors to
       # the ith test point.
       closest_y = []
@@ -158,7 +163,8 @@ class KNearestNeighbor(object):
       # neighbors. Store these labels in closest_y.                           #
       # Hint: Look up the function numpy.argsort.                             #
       #########################################################################
-      labels = self.y_train[np.argsort(dists[i,:])].flatten() 
+      labels = self.y_train[np.argsort(dists[i,:])].flatten() # (5000,)
+      # np.argsort() 는 Returns the indices that would sort an array!
       closest_y = labels[0:k]
       #########################################################################
       # TODO:                                                                 #
@@ -168,10 +174,12 @@ class KNearestNeighbor(object):
       # label.                                                                #
       #########################################################################
       c = Counter(closest_y)
-      y_pred[i] = c.most_common(1)[0][0] 
+      y_pred[i] = c.most_common(1)[0][0]
+      # ex) c.most_common(5)은 가장 많이 나오는 (원소, 빈도수) tuple 5개를 반환한다.
+      # Counter(words).most_common(5)
+      # [('the', 1143), ('and', 966), ('to', 762), ('of', 669), ('i', 631)]
       #########################################################################
-      #                           END OF YOUR CODE                            # 
+      #                           END OF YOUR CODE                            #
       #########################################################################
 
     return y_pred
-
